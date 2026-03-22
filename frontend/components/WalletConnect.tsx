@@ -16,7 +16,6 @@ export default function WalletConnect() {
   if (isConnected && address) {
     return (
       <div style={{ position: "relative" }}>
-        {/* Wrong network — show switch button prominently */}
         {isWrongNetwork ? (
           <button
             id="switch-network-btn"
@@ -84,9 +83,7 @@ export default function WalletConnect() {
               zIndex: 50,
             }}
           >
-            <div
-              style={{ padding: "8px 12px", fontSize: "0.8rem", color: "#94a3b8", wordBreak: "break-all", fontFamily: "'JetBrains Mono', monospace" }}
-            >
+            <div style={{ padding: "8px 12px", fontSize: "0.8rem", color: "#94a3b8", wordBreak: "break-all", fontFamily: "'JetBrains Mono', monospace" }}>
               {address}
             </div>
             <div style={{ padding: "4px 12px", fontSize: "0.72rem", color: "#555", fontFamily: "'JetBrains Mono', monospace" }}>
@@ -121,18 +118,32 @@ export default function WalletConnect() {
     );
   }
 
-  const metamaskConnector = connectors.find((c) => c.name === "MetaMask") ?? connectors[0];
-
+  // Show ALL available wallet connectors as separate buttons
   return (
-    <button
-      id="connect-wallet-btn"
-      className="btn-primary"
-      onClick={() => connect({ connector: metamaskConnector })}
-      disabled={isPending}
-      style={{ padding: "9px 20px", fontSize: "0.88rem" }}
-    >
-      {isPending ? <span className="spinner" /> : null}
-      {isPending ? "Connecting…" : "Connect Wallet"}
-    </button>
+    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+      {connectors.length > 0 ? (
+        connectors.map((connector) => (
+          <button
+            key={connector.uid}
+            id={`connect-${connector.id}-btn`}
+            className="btn-primary"
+            onClick={() => connect({ connector })}
+            disabled={isPending}
+            style={{ padding: "9px 16px", fontSize: "0.82rem" }}
+          >
+            {isPending ? <span className="spinner" /> : null}
+            {isPending ? "Connecting…" : connector.name}
+          </button>
+        ))
+      ) : (
+        <button
+          className="btn-primary"
+          disabled
+          style={{ padding: "9px 20px", fontSize: "0.82rem", opacity: 0.5 }}
+        >
+          No Wallet Detected — Install MetaMask
+        </button>
+      )}
+    </div>
   );
 }
