@@ -43,9 +43,9 @@ export async function encryptFinancialData(
       encBalance: { data: encBalance.data as `0x${string}`, securityZone: encBalance.securityZone ?? 0 },
       encIncome:  { data: encIncome.data  as `0x${string}`, securityZone: encIncome.securityZone  ?? 0 },
     };
-  } catch (err) {
+  } catch (err: any) {
     console.error("cofhejs encryption failed:", err);
-    throw new Error("Failed to encrypt financial data. Make sure cofhejs is supported.");
+    throw new Error(`Encryption failed: ${err?.message || "Make sure cofhejs is supported on your network/wallet."}`);
   }
 }
 

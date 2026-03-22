@@ -11,7 +11,7 @@ interface Props {
 }
 
 export default function FinancialForm({ onScoreSubmitted }: Props) {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, connector } = useAccount();
   const { writeContractAsync } = useWriteContract();
 
   const [balance, setBalance] = useState("");
@@ -21,7 +21,7 @@ export default function FinancialForm({ onScoreSubmitted }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!address || !balance || !income) return;
+    if (!address || !balance || !income || !connector) return;
 
     try {
       // Step 1: Encrypt locally
@@ -35,8 +35,11 @@ export default function FinancialForm({ onScoreSubmitted }: Props) {
         throw new Error("Values must be positive integers");
       }
 
-      // Get ethers provider from wallet
-      const ethersProvider = new BrowserProvider(window.ethereum as any);
+      // Get the ACTUAL active provider from wagmi connector (handles WalletConnect etc, not just window.ethereum)
+      const rawProvider = await connector.getProvider();
+      if (!rawProvider) throw new Error("No wallet provider found. Please reconnect your wallet.");
+      const ethersProvider = new BrowserProvider(rawProvider as any);
+      
       const encrypted = await encryptFinancialData(
         ethersProvider,
         CONTRACTS.credit,
@@ -57,6 +60,7 @@ export default function FinancialForm({ onScoreSubmitted }: Props) {
       setStatus("done");
       onScoreSubmitted();
     } catch (err: any) {
+      console.error("Submission error:", err);
       setStatus("error");
       setErrorMsg(err?.message || "An unknown error occurred");
     }
