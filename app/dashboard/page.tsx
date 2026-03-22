@@ -14,133 +14,150 @@ export default function DashboardPage() {
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
 
   return (
-    <div style={{ minHeight: "100vh", position: "relative", zIndex: 1 }}>
-      {/* Navbar */}
+    <div style={{ minHeight: "100vh", position: "relative", zIndex: 1, backgroundColor: "#02040a" }}>
+      {/* Premium Background Effects */}
+      <div className="glow-orb" style={{ top: "-10%", left: "-10%", width: "600px", height: "600px", background: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(0,0,0,0) 70%)" }} />
+      <div className="glow-orb" style={{ top: "40%", right: "-10%", width: "500px", height: "500px", background: "radial-gradient(circle, rgba(139,92,246,0.15) 0%, rgba(0,0,0,0) 70%)" }} />
+      
+      {/* Modern Navbar */}
       <nav style={{
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "18px 40px",
-        borderBottom: "1px solid var(--border)",
-        backdropFilter: "blur(12px)",
-        background: "rgba(5, 11, 20, 0.9)",
+        padding: "20px 48px",
+        borderBottom: "1px solid rgba(255,255,255,0.05)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        background: "rgba(2, 4, 10, 0.7)",
         position: "sticky",
         top: 0,
         zIndex: 100,
+        boxShadow: "0 4px 30px rgba(0, 0, 0, 0.5)",
       }}>
         <button
           onClick={() => router.push("/")}
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 10,
+            gap: 12,
             background: "transparent",
             border: "none",
             cursor: "pointer",
-            color: "var(--text-primary)",
+            color: "#ffffff",
           }}
         >
-          <div style={{ width: 16, height: 16, background: "#fff" }} />
-          <span style={{ fontWeight: 800, fontSize: "1rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-            Confidential<span style={{ color: "var(--text-muted)" }}>Credit</span>
+          <div style={{ width: 24, height: 24, background: "linear-gradient(135deg, #ffffff, #a3a3a3)", borderRadius: "4px", boxShadow: "0 0 15px rgba(255,255,255,0.3)" }} />
+          <span style={{ fontWeight: 900, fontSize: "1.1rem", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+            Confidential<span style={{ color: "#64748b" }}>Credit</span>
           </span>
         </button>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          {address && (
-            <div style={{
-              fontSize: "0.75rem",
-              color: "var(--text-muted)",
-              fontFamily: "'JetBrains Mono', monospace",
-              display: "none",
-            }}
-            className="desktop-only">
-              {address.slice(0,6)}…{address.slice(-4)}
-            </div>
-          )}
-          <span className="badge" style={{ fontSize: "0.65rem" }}>Arbitrum Sepolia</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           <WalletConnect />
         </div>
       </nav>
 
       {/* Main dashboard content */}
-      <main style={{ maxWidth: "1100px", margin: "0 auto", padding: "40px 24px" }}>
+      <main style={{ maxWidth: "1200px", margin: "0 auto", padding: "60px 24px" }}>
         {/* Page header */}
-        <div style={{ marginBottom: "36px" }}>
-          <h1 style={{ fontWeight: 900, fontSize: "1.8rem", letterSpacing: "-0.02em", marginBottom: 8 }}>
-            Dashboard
+        <div style={{ marginBottom: "48px", position: "relative" }}>
+          <h1 style={{ fontWeight: 900, fontSize: "2.5rem", letterSpacing: "-0.03em", marginBottom: 12, background: "linear-gradient(to right, #ffffff, #94a3b8)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            Credit Dashboard
           </h1>
-          <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
-            Encrypt your financial data, compute a private credit score, and borrow without collateral.
+          <p style={{ color: "#94a3b8", fontSize: "1.05rem", maxWidth: "600px", lineHeight: 1.6 }}>
+            Encrypt your financial data, compute a private credit score within the FHE coprocessor, and unlock undercollateralized borrowing power.
           </p>
         </div>
 
         {!isConnected ? (
           /* Not connected CTA */
-          <div className="glass-card" style={{ padding: "60px 40px", textAlign: "center", maxWidth: 480, margin: "0 auto" }}>
-            <div style={{ width: 48, height: 48, border: "2px solid #fff", margin: "0 auto 20px" }} className="float-anim" />
-            <h2 style={{ fontWeight: 800, fontSize: "1.3rem", marginBottom: 12 }}>
-              Connect Your Wallet
+          <div style={{ 
+            padding: "80px 40px", 
+            textAlign: "center", 
+            maxWidth: 560, 
+            margin: "0 auto",
+            background: "rgba(10, 15, 30, 0.4)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: "24px",
+            boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
+            backdropFilter: "blur(12px)",
+            position: "relative",
+            overflow: "hidden"
+          }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)" }} />
+            
+            <div style={{ width: 64, height: 64, borderRadius: "16px", background: "linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02))", border: "1px solid rgba(255,255,255,0.2)", margin: "0 auto 24px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2rem" }} className="float-anim">
+              🔐
+            </div>
+            <h2 style={{ fontWeight: 900, fontSize: "1.8rem", marginBottom: 16 }}>
+              Unlock Your Credit Power
             </h2>
-            <p style={{ color: "var(--text-secondary)", marginBottom: 28, fontSize: "0.9rem" }}>
-              Connect MetaMask on Arbitrum Sepolia to access the confidential credit protocol.
+            <p style={{ color: "#94a3b8", marginBottom: 36, fontSize: "1rem", lineHeight: 1.6 }}>
+              Connect your Web3 wallet on the <strong style={{ color: "#fff" }}>Arbitrum Sepolia</strong> network to access the world's first fully confidential lending protocol.
             </p>
             <WalletConnect />
           </div>
         ) : (
           /* 3-step workflow */
-          <div>
-            {/* Progress indicator */}
+          <div className="fade-in-up">
+            {/* Premium Progress Indicator */}
             <div style={{
               display: "flex",
               alignItems: "center",
-              gap: "0",
-              marginBottom: "32px",
-              overflow: "hidden",
+              marginBottom: "48px",
+              background: "rgba(255,255,255,0.02)",
+              padding: "20px 32px",
+              borderRadius: "16px",
+              border: "1px solid rgba(255,255,255,0.05)",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
             }}>
               {[
-                { num: 1, label: "Encrypt & Submit", done: scoreSubmitted },
-                { num: 2, label: "Check Eligibility", done: false },
-                { num: 3, label: "Borrow / Repay",   done: false },
+                { num: 1, label: "Encrypt & Submit", done: scoreSubmitted, icon: "🛡️" },
+                { num: 2, label: "Check Eligibility", done: false, icon: "📊" },
+                { num: 3, label: "Borrow / Repay",   done: false, icon: "🏦" },
               ].map((s, i) => (
                 <div key={s.num} style={{ display: "flex", alignItems: "center", flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                     <div style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: "0px",
-                      background: s.done ? "#ffffff" : "#000000",
-                      border: `1px solid ${s.done ? "#ffffff" : "var(--border)"}`,
+                      width: 44,
+                      height: 44,
+                      borderRadius: "12px",
+                      background: s.done ? "linear-gradient(135deg, #ffffff, #d1d5db)" : "rgba(255,255,255,0.05)",
+                      border: `1px solid ${s.done ? "#ffffff" : "rgba(255,255,255,0.1)"}`,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: "0.8rem",
-                      fontWeight: 700,
-                      color: s.done ? "#000000" : "var(--text-muted)",
-                      flexShrink: 0,
-                      transition: "all 0.3s",
-                      fontFamily: "'JetBrains Mono', monospace"
+                      fontSize: "1.2rem",
+                      fontWeight: 800,
+                      color: s.done ? "#000000" : "#94a3b8",
+                      boxShadow: s.done ? "0 0 20px rgba(255,255,255,0.2)" : "none",
+                      transition: "all 0.4s ease",
                     }}>
                       {s.done ? "✓" : s.num}
                     </div>
-                    <span style={{
-                      fontSize: "0.8rem",
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                      color: s.done ? "#ffffff" : "var(--text-muted)",
-                      display: "block",
-                      fontFamily: "'JetBrains Mono', monospace"
-                    }}>
-                      {s.label}
-                    </span>
+                    <div>
+                      <span style={{ fontSize: "0.7rem", color: s.done ? "#cbd5e1" : "#64748b", textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, display: "block", marginBottom: 2 }}>
+                        Step 0{s.num}
+                      </span>
+                      <span style={{
+                        fontSize: "0.95rem",
+                        fontWeight: 700,
+                        color: s.done ? "#ffffff" : "#94a3b8",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px"
+                      }}>
+                        {s.label}
+                      </span>
+                    </div>
                   </div>
                   {i < 2 && (
                     <div style={{
                       flex: 1,
-                      height: 1,
-                      background: "var(--border)",
-                      margin: "0 12px",
+                      height: 2,
+                      background: s.done ? "linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1))" : "rgba(255,255,255,0.05)",
+                      margin: "0 24px",
+                      borderRadius: "2px"
                     }} />
                   )}
                 </div>
@@ -148,31 +165,44 @@ export default function DashboardPage() {
             </div>
 
             {/* Main grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(450px, 1fr))", gap: "32px" }}>
               {/* Left column: Submit + Eligibility */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                <FinancialForm onScoreSubmitted={() => setScoreSubmitted(true)} />
-                <EligibilityChecker />
+              <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
+                <div style={{ padding: "32px", background: "rgba(10, 15, 30, 0.4)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "20px", boxShadow: "0 20px 40px rgba(0,0,0,0.3)", backdropFilter: "blur(12px)" }}>
+                  <FinancialForm onScoreSubmitted={() => setScoreSubmitted(true)} />
+                </div>
+                <div style={{ padding: "32px", background: "rgba(10, 15, 30, 0.4)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "20px", boxShadow: "0 20px 40px rgba(0,0,0,0.3)", backdropFilter: "blur(12px)" }}>
+                  <EligibilityChecker />
+                </div>
               </div>
 
               {/* Right column: Vault */}
-              <div>
+              <div style={{ padding: "32px", background: "linear-gradient(180deg, rgba(10, 15, 30, 0.6) 0%, rgba(5, 7, 15, 0.8) 100%)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "20px", boxShadow: "0 20px 40px rgba(0,0,0,0.4)", backdropFilter: "blur(12px)" }}>
                 <BorrowVault />
               </div>
             </div>
 
-            {/* Info panel */}
-            <div className="glass-card" style={{ padding: "20px 24px", marginTop: "24px" }}>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
-                <span style={{ fontSize: "1.4rem" }}>ℹ️</span>
+            {/* Premium Info panel */}
+            <div style={{ 
+              padding: "24px 32px", 
+              marginTop: "48px",
+              background: "linear-gradient(90deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1))",
+              border: "1px solid rgba(139, 92, 246, 0.2)",
+              borderRadius: "16px",
+              position: "relative",
+              overflow: "hidden"
+            }}>
+              <div style={{ position: "absolute", top: 0, left: 0, width: "4px", bottom: 0, background: "linear-gradient(180deg, #3b82f6, #8b5cf6)" }} />
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
+                <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
+                  🛡️
+                </div>
                 <div>
-                  <div style={{ fontWeight: 700, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Privacy Guarantee</div>
-                  <div style={{ color: "var(--text-secondary)", fontSize: "0.85rem", lineHeight: 1.6, fontFamily: "'JetBrains Mono', monospace" }}>
-                    Your balance and income are <strong style={{ color: "#ffffff" }}>encrypted client-side with FHE</strong> before
-                    being submitted. The Fhenix CoFHE coprocessor computes your score on ciphertext —
-                    no node, validator, or observer ever sees your raw financial data.
-                    Only a single bit (Eligible / Not Eligible) is ever decrypted publicly.
-                    You can view your own score privately using the sealed output feature.
+                  <div style={{ fontWeight: 800, fontSize: "1.05rem", marginBottom: 6, color: "#fff" }}>Hardware-Level Privacy Guarantee</div>
+                  <div style={{ color: "#94a3b8", fontSize: "0.9rem", lineHeight: 1.7 }}>
+                    Your balance and income are <strong style={{ color: "#c084fc" }}>encrypted client-side (FHE)</strong> before leaving your browser. 
+                    The Fhenix CoFHE coprocessor computes your score solely on ciphertext. 
+                    Zero knowledge of your personal wealth is ever exposed to nodes, validators, or the blockchain ledger.
                   </div>
                 </div>
               </div>
