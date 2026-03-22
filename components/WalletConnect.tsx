@@ -181,21 +181,29 @@ export default function WalletConnect() {
           </div>
         )}
       </div>
-    );
-  }
+  // Securely find the best connector (MetaMask or standard Injected)
+  const handleConnect = () => {
+    const connector = 
+      connectors.find((c) => c.id === "metaMask") || 
+      connectors.find((c) => c.id === "injected") || 
+      connectors[0];
+      
+    if (connector) {
+      connect({ connector });
+    }
+  };
 
-  // Show a SINGLE unified wallet connect button instead of mapping multiple
-  const primaryConnector = connectors.find((c) => c.name === "MetaMask") ?? connectors[0];
+  const hasConnectors = connectors.length > 0;
 
   return (
     <div style={{ display: "flex", justifyContent: "center" }}>
-      {primaryConnector ? (
+      {hasConnectors ? (
         <button
           id="connect-wallet-btn"
-          onClick={() => connect({ connector: primaryConnector })}
+          onClick={handleConnect}
           disabled={isPending}
           style={{ 
-            padding: "12px 28px", 
+            padding: "12px 32px", 
             fontSize: "0.95rem",
             background: "linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%)",
             color: "#0f172a",
@@ -223,9 +231,7 @@ export default function WalletConnect() {
             }
           }}
         >
-          {isPending ? <span className="spinner" style={{ width: 18, height: 18, borderColor: "rgba(0,0,0,0.2)", borderTopColor: "#000" }} /> : 
-            <span style={{ fontSize: "1.3rem" }}>💎</span>
-          }
+          {isPending && <span className="spinner" style={{ width: 18, height: 18, borderColor: "rgba(0,0,0,0.2)", borderTopColor: "#000" }} />}
           {isPending ? "Connecting…" : "Connect Wallet"}
         </button>
       ) : (
