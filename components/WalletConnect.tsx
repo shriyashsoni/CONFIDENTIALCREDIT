@@ -184,57 +184,56 @@ export default function WalletConnect() {
     );
   }
 
-  // Show ALL available wallet connectors as separate buttons
+  // Show a SINGLE unified wallet connect button instead of mapping multiple
+  const primaryConnector = connectors.find((c) => c.name === "MetaMask") ?? connectors[0];
+
   return (
-    <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
-      {connectors.length > 0 ? (
-        connectors.map((connector) => (
-          <button
-            key={connector.uid}
-            id={`connect-${connector.id}-btn`}
-            onClick={() => connect({ connector })}
-            disabled={isPending}
-            style={{ 
-              padding: "12px 24px", 
-              fontSize: "0.9rem",
-              background: "linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%)",
-              color: "#0f172a",
-              border: "none",
-              borderRadius: "12px",
-              fontWeight: 800,
-              fontFamily: "'Inter', sans-serif",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              boxShadow: "0 4px 14px rgba(255,255,255,0.15), inset 0 1px 0 rgba(255,255,255,1)",
-              transition: "transform 0.2s, box-shadow 0.2s",
-            }}
-            onMouseOver={(e) => {
-              if(!isPending) {
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = "0 6px 20px rgba(255,255,255,0.2), inset 0 1px 0 rgba(255,255,255,1)";
-              }
-            }}
-            onMouseOut={(e) => {
-              if(!isPending) {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 4px 14px rgba(255,255,255,0.15), inset 0 1px 0 rgba(255,255,255,1)";
-              }
-            }}
-          >
-            {isPending ? <span className="spinner" style={{ width: 16, height: 16, borderColor: "rgba(0,0,0,0.2)", borderTopColor: "#000" }} /> : 
-              <span style={{ fontSize: "1.2rem" }}>💎</span>
+    <div style={{ display: "flex", justifyContent: "center" }}>
+      {primaryConnector ? (
+        <button
+          id="connect-wallet-btn"
+          onClick={() => connect({ connector: primaryConnector })}
+          disabled={isPending}
+          style={{ 
+            padding: "12px 28px", 
+            fontSize: "0.95rem",
+            background: "linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%)",
+            color: "#0f172a",
+            border: "none",
+            borderRadius: "12px",
+            fontWeight: 800,
+            fontFamily: "'Inter', sans-serif",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            boxShadow: "0 4px 14px rgba(255,255,255,0.15), inset 0 1px 0 rgba(255,255,255,1)",
+            transition: "transform 0.2s, box-shadow 0.2s",
+          }}
+          onMouseOver={(e) => {
+            if(!isPending) {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 6px 20px rgba(255,255,255,0.2), inset 0 1px 0 rgba(255,255,255,1)";
             }
-            {isPending ? "Connecting…" : `Connect ${connector.name}`}
-          </button>
-        ))
+          }}
+          onMouseOut={(e) => {
+            if(!isPending) {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0 4px 14px rgba(255,255,255,0.15), inset 0 1px 0 rgba(255,255,255,1)";
+            }
+          }}
+        >
+          {isPending ? <span className="spinner" style={{ width: 18, height: 18, borderColor: "rgba(0,0,0,0.2)", borderTopColor: "#000" }} /> : 
+            <span style={{ fontSize: "1.3rem" }}>💎</span>
+          }
+          {isPending ? "Connecting…" : "Connect Wallet"}
+        </button>
       ) : (
         <button
           disabled
           style={{ 
-            padding: "12px 24px", 
-            fontSize: "0.9rem", 
+            padding: "12px 28px", 
+            fontSize: "0.95rem", 
             opacity: 0.5,
             background: "rgba(255,255,255,0.1)",
             border: "1px solid rgba(255,255,255,0.2)",
