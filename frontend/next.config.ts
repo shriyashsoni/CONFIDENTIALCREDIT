@@ -1,20 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Required for Vercel monorepo deployment from /frontend subdir
-  output: "standalone",
-
-  // Silence build warnings from ethers/viem/wagmi tree-shaking
-  webpack: (config) => {
-    config.externals = config.externals || [];
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      fs: false,
-      net: false,
-      tls: false,
-    };
-    return config;
-  },
+  // Use webpack instead of turbopack for build (avoids cofhejs/ethers compat issues)
+  turbopack: {},
 
   // Ensure environment variables are available at build time
   env: {

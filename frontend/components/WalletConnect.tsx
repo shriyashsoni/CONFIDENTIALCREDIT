@@ -1,6 +1,6 @@
 "use client";
 
-import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi";
+import { useAccount, useConnect, useDisconnect, useSwitchChain, useBalance } from "wagmi";
 import { arbitrumSepolia } from "wagmi/chains";
 import { useState } from "react";
 
@@ -11,11 +11,17 @@ export default function WalletConnect() {
   const { switchChain, isPending: isSwitching } = useSwitchChain();
   const [showMenu, setShowMenu] = useState(false);
 
+  const { data: balanceData } = useBalance({
+    address,
+  });
+
   const isWrongNetwork = isConnected && chain?.id !== arbitrumSepolia.id;
+  const isTestnet = chain?.testnet ?? (chain?.name?.toLowerCase().includes("test") || chain?.name?.toLowerCase().includes("sepolia"));
 
   if (isConnected && address) {
     return (
-      <div style={{ position: "relative" }}>
+      <div style={{ position: "relative", zIndex: 1000 }}>
+        {/* Wrong network — show switch button prominently */}
         {isWrongNetwork ? (
           <button
             id="switch-network-btn"
@@ -25,18 +31,22 @@ export default function WalletConnect() {
               display: "flex",
               alignItems: "center",
               gap: "8px",
-              padding: "8px 16px",
-              background: "rgba(255,255,255,0.1)",
-              border: "1px solid #ffffff",
-              borderRadius: "0px",
+              padding: "10px 20px",
+              background: "linear-gradient(45deg, #ff3b30, #ff9500)",
+              border: "none",
+              borderRadius: "8px",
               color: "#ffffff",
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: "0.82rem",
+              fontFamily: "'Inter', sans-serif",
+              fontSize: "0.85rem",
               fontWeight: 700,
               cursor: "pointer",
+              boxShadow: "0 4px 14px 0 rgba(255, 59, 48, 0.39)",
+              transition: "transform 0.2s, box-shadow 0.2s",
             }}
+            onMouseOver={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
+            onMouseOut={(e) => (e.currentTarget.style.transform = "translateY(0)")}
           >
-            {isSwitching ? <span className="spinner" /> : "⚠"}
+            {isSwitching ? <span className="spinner" style={{ borderColor: "rgba(255,255,255,0.3)", borderTopColor: "#fff" }} /> : "⚠"}
             {isSwitching ? "Switching…" : "Switch to Arbitrum Sepolia"}
           </button>
         ) : (
@@ -46,100 +56,198 @@ export default function WalletConnect() {
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "8px",
-              padding: "8px 16px",
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid #ffffff",
-              borderRadius: "0px",
+              gap: "12px",
+              padding: "6px 6px 6px 14px",
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: "12px",
               color: "#ffffff",
               fontFamily: "'JetBrains Mono', monospace",
               fontSize: "0.82rem",
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: "pointer",
+              backdropFilter: "blur(10px)",
+              transition: "all 0.3s ease",
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+              e.currentTarget.style.borderColor = "rgba(255,255,255,0.2)";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+              e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
             }}
           >
-            <span
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: "0px",
-                background: "#ffffff",
-                flexShrink: 0,
-              }}
-            />
-            {`${address.slice(0, 6)}…${address.slice(-4)}`}
+            {/* Balance Display */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", textAlign: "right" }}>
+              <span style={{ color: "var(--text-secondary)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.05em", lineHeight: 1, marginBottom: 2 }}>
+                Balance
+              </span>
+              <span style={{ color: "#fff", fontWeight: 700, lineHeight: 1, fontSize: "0.85rem" }}>
+                {balanceData ? `${parseFloat(balanceData.formatted).toFixed(4)} ${balanceData.symbol}` : "0.0000"}
+              </span>
+            </div>
+            
+            {/* Address Pill */}
+            <div style={{
+              background: "rgba(0,0,0,0.6)",
+              padding: "8px 12px",
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              border: "1px solid rgba(255,255,255,0.08)"
+            }}>
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 10px #4ade80" }} />
+              {`${address.slice(0, 6)}…${address.slice(-4)}`}
+            </div>
           </button>
         )}
 
         {showMenu && !isWrongNetwork && (
           <div
-            className="glass-card"
             style={{
               position: "absolute",
-              top: "calc(100% + 8px)",
+              top: "calc(100% + 12px)",
               right: 0,
-              minWidth: "220px",
-              padding: "8px",
-              zIndex: 50,
+              minWidth: "260px",
+              padding: "16px",
+              zIndex: 1000,
+              background: "rgba(10, 10, 12, 0.95)",
+              backdropFilter: "blur(20px)",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: "16px",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05) inset",
+              animation: "fadeInUp 0.2s ease-out forwards",
             }}
           >
-            <div style={{ padding: "8px 12px", fontSize: "0.8rem", color: "#94a3b8", wordBreak: "break-all", fontFamily: "'JetBrains Mono', monospace" }}>
-              {address}
+            {/* Network Info */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+              <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>Network</span>
+              <span style={{ 
+                fontSize: "0.7rem", 
+                padding: "4px 8px", 
+                background: isTestnet ? "rgba(168, 85, 247, 0.2)" : "rgba(74, 222, 128, 0.2)",
+                color: isTestnet ? "#c084fc" : "#4ade80",
+                borderRadius: "6px",
+                fontWeight: 800,
+                border: `1px solid ${isTestnet ? "rgba(168, 85, 247, 0.3)" : "rgba(74, 222, 128, 0.3)"}`
+              }}>
+                {isTestnet ? "TESTNET" : "MAINNET"}
+              </span>
             </div>
-            <div style={{ padding: "4px 12px", fontSize: "0.72rem", color: "#555", fontFamily: "'JetBrains Mono', monospace" }}>
-              {chain?.name ?? "Unknown"} · Chain {chain?.id}
+            
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", background: "rgba(255,255,255,0.03)", padding: "12px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.05)" }}>
+              <div style={{ width: 32, height: 32, borderRadius: "8px", background: "linear-gradient(135deg, #3b82f6, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem" }}>
+                🌐
+              </div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span style={{ fontWeight: 700, fontSize: "0.95rem", color: "#fff" }}>{chain?.name ?? "Unknown"}</span>
+                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace" }}>Chain ID: {chain?.id}</span>
+              </div>
             </div>
-            <div className="divider" style={{ margin: "4px 0" }} />
+
+            <div className="divider" style={{ margin: "16px 0", background: "rgba(255,255,255,0.1)" }} />
+            
+            {/* Disconnect */}
             <button
               id="disconnect-btn"
               onClick={() => { disconnect(); setShowMenu(false); }}
               style={{
                 width: "100%",
-                padding: "8px 12px",
-                background: "transparent",
-                border: "none",
-                color: "#ffffff",
+                padding: "12px",
+                background: "rgba(239, 68, 68, 0.1)",
+                border: "1px solid rgba(239, 68, 68, 0.2)",
+                color: "#ef4444",
                 fontFamily: "'Inter', sans-serif",
-                fontSize: "0.88rem",
+                fontSize: "0.9rem",
                 fontWeight: 600,
                 cursor: "pointer",
-                textAlign: "left",
-                borderRadius: "0px",
+                textAlign: "center",
+                borderRadius: "8px",
                 transition: "all 0.2s",
               }}
-              onMouseOver={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#ffffff"; (e.currentTarget as HTMLButtonElement).style.color = "#000000"; }}
-              onMouseOut={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = "#ffffff"; }}
+              onMouseOver={(e) => { 
+                e.currentTarget.style.background = "rgba(239, 68, 68, 0.2)"; 
+                e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.4)";
+              }}
+              onMouseOut={(e) => { 
+                e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)"; 
+                e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.2)";
+              }}
             >
-              Disconnect
+              Disconnect Wallet
             </button>
           </div>
         )}
       </div>
-    );
-  }
+  // Securely find the best connector (MetaMask or standard Injected)
+  const handleConnect = () => {
+    const connector = 
+      connectors.find((c) => c.id === "metaMask") || 
+      connectors.find((c) => c.id === "injected") || 
+      connectors[0];
+      
+    if (connector) {
+      connect({ connector });
+    }
+  };
 
-  // Show ALL available wallet connectors as separate buttons
+  const hasConnectors = connectors.length > 0;
+
   return (
-    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-      {connectors.length > 0 ? (
-        connectors.map((connector) => (
-          <button
-            key={connector.uid}
-            id={`connect-${connector.id}-btn`}
-            className="btn-primary"
-            onClick={() => connect({ connector })}
-            disabled={isPending}
-            style={{ padding: "9px 16px", fontSize: "0.82rem" }}
-          >
-            {isPending ? <span className="spinner" /> : null}
-            {isPending ? "Connecting…" : connector.name}
-          </button>
-        ))
+    <div style={{ display: "flex", justifyContent: "center" }}>
+      {hasConnectors ? (
+        <button
+          id="connect-wallet-btn"
+          onClick={handleConnect}
+          disabled={isPending}
+          style={{ 
+            padding: "12px 32px", 
+            fontSize: "0.95rem",
+            background: "linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%)",
+            color: "#0f172a",
+            border: "none",
+            borderRadius: "12px",
+            fontWeight: 800,
+            fontFamily: "'Inter', sans-serif",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            boxShadow: "0 4px 14px rgba(255,255,255,0.15), inset 0 1px 0 rgba(255,255,255,1)",
+            transition: "transform 0.2s, box-shadow 0.2s",
+          }}
+          onMouseOver={(e) => {
+            if(!isPending) {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 6px 20px rgba(255,255,255,0.2), inset 0 1px 0 rgba(255,255,255,1)";
+            }
+          }}
+          onMouseOut={(e) => {
+            if(!isPending) {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0 4px 14px rgba(255,255,255,0.15), inset 0 1px 0 rgba(255,255,255,1)";
+            }
+          }}
+        >
+          {isPending && <span className="spinner" style={{ width: 18, height: 18, borderColor: "rgba(0,0,0,0.2)", borderTopColor: "#000" }} />}
+          {isPending ? "Connecting…" : "Connect Wallet"}
+        </button>
       ) : (
         <button
-          className="btn-primary"
           disabled
-          style={{ padding: "9px 20px", fontSize: "0.82rem", opacity: 0.5 }}
+          style={{ 
+            padding: "12px 28px", 
+            fontSize: "0.95rem", 
+            opacity: 0.5,
+            background: "rgba(255,255,255,0.1)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            color: "#fff",
+            borderRadius: "12px",
+            fontWeight: 600,
+            cursor: "not-allowed",
+          }}
         >
           No Wallet Detected — Install MetaMask
         </button>
