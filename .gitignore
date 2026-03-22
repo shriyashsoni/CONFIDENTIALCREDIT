@@ -4,6 +4,7 @@ node_modules/
 # Environment (private keys!)
 .env
 .env.local
+frontend/.env.local
 
 # Hardhat build artifacts
 dist/
@@ -15,10 +16,8 @@ coverage.json
 
 # Next.js build
 .next/
+frontend/.next/
 
 # Misc
 *.log
 .DS_Store
-
-# Old frontend directory (now merged into root)
-frontend/
