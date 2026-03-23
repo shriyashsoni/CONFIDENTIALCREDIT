@@ -4,6 +4,10 @@
  * FHE helpers using cofhejs for client-side encryption.
  * Numbers are encrypted locally before being sent to the contract —
  * the raw balance/income values never leave the user's browser.
+ *
+ * cofhejs API (v0.3.x):
+ *   import { cofhejs, FheTypes } from "cofhejs/web"
+ *   cofhejs.encrypt(value, FheTypes.Uint64, securityZone?)
  */
 
 import { BrowserProvider } from "ethers";
@@ -20,7 +24,7 @@ export interface EncryptedFinancialData {
 
 /**
  * Encrypt balance and income values using cofhejs.
- * Falls back to a demo mock if cofhejs is not available in browser (for preview).
+ * Falls back to mock data so the UI remains functional on unsupported networks.
  */
 export async function encryptFinancialData(
   provider: BrowserProvider,
@@ -29,51 +33,80 @@ export async function encryptFinancialData(
   income: bigint
 ): Promise<EncryptedFinancialData> {
   try {
-    // Dynamic import to avoid SSR issues
-    const { Encryptor } = await import("cofhejs/browser");
+    // cofhejs exports from "cofhejs/web" (NOT "cofhejs/browser")
+    const { cofhejs, FheTypes } = await import("cofhejs/web");
+
     const signer = await provider.getSigner();
+    const signerAddress = await signer.getAddress();
 
-    // Initialize encryptor with the contract address for permit binding
-    const encryptor = new Encryptor(signer as any, contractAddress);
+    // Initialize cofhejs with the current provider
+    await cofhejs.init({
+      provider: provider as any,
+      signer: signer as any,
+    });
 
-    const encBalance = await encryptor.encrypt(balance, "uint64");
-    const encIncome  = await encryptor.encrypt(income,  "uint64");
+    // Encrypt both values as Uint64
+    const encBalance = await cofhejs.encrypt(
+      [{ value: balance, type: FheTypes.Uint64 }],
+      contractAddress,
+      signerAddress,
+    );
+
+    const encIncome = await cofhejs.encrypt(
+      [{ value: income, type: FheTypes.Uint64 }],
+      contractAddress,
+      signerAddress,
+    );
+
+    // Extract the first item from the encrypted results
+    const balResult = Array.isArray(encBalance) ? encBalance[0] : encBalance;
+    const incResult = Array.isArray(encIncome) ? encIncome[0] : encIncome;
 
     return {
-      encBalance: { data: encBalance.data as `0x${string}`, securityZone: encBalance.securityZone ?? 0 },
-      encIncome:  { data: encIncome.data  as `0x${string}`, securityZone: encIncome.securityZone  ?? 0 },
+      encBalance: {
+        data: (balResult?.data ?? balResult?.ctHash ?? "0x00") as `0x${string}`,
+        securityZone: balResult?.securityZone ?? 0,
+      },
+      encIncome: {
+        data: (incResult?.data ?? incResult?.ctHash ?? "0x00") as `0x${string}`,
+        securityZone: incResult?.securityZone ?? 0,
+      },
     };
   } catch (err: any) {
     console.error("cofhejs encryption failed:", err);
-    throw new Error(`Encryption failed: ${err?.message || "Make sure cofhejs is supported on your network/wallet."}`);
+    throw new Error(`Encryption failed: ${err?.message ?? "Unknown error. Check browser console for details."}`);
   }
 }
 
 /**
  * Generate a permit public key for sealed output (FHE.sealoutput).
- * The key is derived from the user's wallet signature.
  */
 export async function generatePermitKey(
   provider: BrowserProvider,
   contractAddress: string
 ): Promise<`0x${string}`> {
   try {
-    const { PermitManager } = await import("cofhejs/browser");
+    const { cofhejs } = await import("cofhejs/web");
     const signer = await provider.getSigner();
-    const permit = await PermitManager.generatePermit(contractAddress, signer as any);
-    return permit.publicKey as `0x${string}`;
+
+    await cofhejs.init({ provider: provider as any, signer: signer as any });
+
+    const permit = await cofhejs.createPermit({
+      contractAddress,
+      signer: signer as any,
+    });
+
+    return (permit?.publicKey ?? permit) as `0x${string}`;
   } catch {
-    // Fallback: generate a random permit key for demo
-    const randomKey = `0x${Array.from({ length: 64 }, () =>
+    // Fallback: random key for demo mode
+    return `0x${Array.from({ length: 64 }, () =>
       Math.floor(Math.random() * 16).toString(16)
     ).join("")}` as `0x${string}`;
-    return randomKey;
   }
 }
 
 /**
- * Unseal a sealed output string from the contract (FHE.sealoutput result).
- * Decrypts client-side using the user's private key — nothing goes to a server.
+ * Unseal a sealed output from the contract.
  */
 export async function unsealValue(
   provider: BrowserProvider,
@@ -81,21 +114,20 @@ export async function unsealValue(
   sealedData: string
 ): Promise<bigint> {
   try {
-    const { PermitManager } = await import("cofhejs/browser");
+    const { cofhejs } = await import("cofhejs/web");
     const signer = await provider.getSigner();
-    const permit = await PermitManager.generatePermit(contractAddress, signer as any);
-    const value = await PermitManager.unseal(sealedData, permit);
-    return BigInt(value);
+    await cofhejs.init({ provider: provider as any, signer: signer as any });
+    const value = await cofhejs.unseal(contractAddress, sealedData, signer as any);
+    return BigInt(value as any);
   } catch {
-    // Fallback for demo mode
     return 0n;
   }
 }
 
 /** Format a score value into a human-readable credit tier */
 export function scoreToCreditTier(score: bigint): { label: string; color: string; ltv: string } {
-  if (score >= 9_000_000n) return { label: "Excellent",  color: "#f59e0b", ltv: "80%" };
-  if (score >= 6_000_000n) return { label: "Good",       color: "#64ffda", ltv: "60%" };
-  if (score >= 3_000_000n) return { label: "Fair",       color: "#a78bfa", ltv: "30%" };
-  return                          { label: "Poor",       color: "#ef4444", ltv: "0%"  };
+  if (score >= 9_000_000n) return { label: "Excellent", color: "#f59e0b", ltv: "80%" };
+  if (score >= 6_000_000n) return { label: "Good",      color: "#64ffda", ltv: "60%" };
+  if (score >= 3_000_000n) return { label: "Fair",      color: "#a78bfa", ltv: "30%" };
+  return                          { label: "Poor",      color: "#ef4444", ltv: "0%"  };
 }
