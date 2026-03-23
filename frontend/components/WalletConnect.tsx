@@ -13,15 +13,24 @@ export default function WalletConnect() {
 
   const { data: balanceData } = useBalance({
     address,
+    chainId: arbitrumSepolia.id, // Always fetch from Arbitrum Sepolia
   });
 
   const isWrongNetwork = isConnected && chain?.id !== arbitrumSepolia.id;
   const isTestnet = chain?.testnet ?? (chain?.name?.toLowerCase().includes("test") || chain?.name?.toLowerCase().includes("sepolia"));
 
+  // Securely find the best connector (MetaMask or standard Injected)
+  const handleConnect = () => {
+    const connector =
+      connectors.find((c) => c.id === "metaMask") ||
+      connectors.find((c) => c.id === "injected") ||
+      connectors[0];
+    if (connector) connect({ connector });
+  };
+
   if (isConnected && address) {
     return (
       <div style={{ position: "relative", zIndex: 1000 }}>
-        {/* Wrong network — show switch button prominently */}
         {isWrongNetwork ? (
           <button
             id="switch-network-btn"
@@ -41,7 +50,7 @@ export default function WalletConnect() {
               fontWeight: 700,
               cursor: "pointer",
               boxShadow: "0 4px 14px 0 rgba(255, 59, 48, 0.39)",
-              transition: "transform 0.2s, box-shadow 0.2s",
+              transition: "transform 0.2s",
             }}
             onMouseOver={(e) => (e.currentTarget.style.transform = "translateY(-2px)")}
             onMouseOut={(e) => (e.currentTarget.style.transform = "translateY(0)")}
@@ -78,16 +87,16 @@ export default function WalletConnect() {
               e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
             }}
           >
-            {/* Balance Display */}
+            {/* Balance */}
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", textAlign: "right" }}>
               <span style={{ color: "var(--text-secondary)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: "0.05em", lineHeight: 1, marginBottom: 2 }}>
                 Balance
               </span>
               <span style={{ color: "#fff", fontWeight: 700, lineHeight: 1, fontSize: "0.85rem" }}>
-                {balanceData ? `${parseFloat(balanceData.formatted).toFixed(4)} ${balanceData.symbol}` : "0.0000"}
+                {balanceData ? `${parseFloat(balanceData.formatted).toFixed(4)} ${balanceData.symbol}` : "— ETH"}
               </span>
             </div>
-            
+
             {/* Address Pill */}
             <div style={{
               background: "rgba(0,0,0,0.6)",
@@ -105,28 +114,26 @@ export default function WalletConnect() {
         )}
 
         {showMenu && !isWrongNetwork && (
-          <div
-            style={{
-              position: "absolute",
-              top: "calc(100% + 12px)",
-              right: 0,
-              minWidth: "260px",
-              padding: "16px",
-              zIndex: 1000,
-              background: "rgba(10, 10, 12, 0.95)",
-              backdropFilter: "blur(20px)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: "16px",
-              boxShadow: "0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05) inset",
-              animation: "fadeInUp 0.2s ease-out forwards",
-            }}
-          >
-            {/* Network Info */}
+          <div style={{
+            position: "absolute",
+            top: "calc(100% + 12px)",
+            right: 0,
+            minWidth: "260px",
+            padding: "16px",
+            zIndex: 1000,
+            background: "rgba(10, 10, 12, 0.95)",
+            backdropFilter: "blur(20px)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: "16px",
+            boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
+            animation: "fadeInUp 0.2s ease-out forwards",
+          }}>
+            {/* Network badge */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
               <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>Network</span>
-              <span style={{ 
-                fontSize: "0.7rem", 
-                padding: "4px 8px", 
+              <span style={{
+                fontSize: "0.7rem",
+                padding: "4px 8px",
                 background: isTestnet ? "rgba(168, 85, 247, 0.2)" : "rgba(74, 222, 128, 0.2)",
                 color: isTestnet ? "#c084fc" : "#4ade80",
                 borderRadius: "6px",
@@ -136,20 +143,25 @@ export default function WalletConnect() {
                 {isTestnet ? "TESTNET" : "MAINNET"}
               </span>
             </div>
-            
+
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px", background: "rgba(255,255,255,0.03)", padding: "12px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.05)" }}>
-              <div style={{ width: 32, height: 32, borderRadius: "8px", background: "linear-gradient(135deg, #3b82f6, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem" }}>
-                🌐
-              </div>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <span style={{ fontWeight: 700, fontSize: "0.95rem", color: "#fff" }}>{chain?.name ?? "Unknown"}</span>
-                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace" }}>Chain ID: {chain?.id}</span>
+              <div style={{ width: 32, height: 32, borderRadius: "8px", background: "linear-gradient(135deg, #3b82f6, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem" }}>🌐</div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "#fff" }}>{chain?.name ?? "Unknown"}</div>
+                <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontFamily: "'JetBrains Mono', monospace" }}>Chain ID: {chain?.id}</div>
               </div>
             </div>
 
+            {/* Balance full */}
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "16px", background: "rgba(255,255,255,0.03)", padding: "12px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.05)" }}>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontWeight: 700 }}>Balance</span>
+              <span style={{ fontSize: "0.9rem", color: "#fff", fontWeight: 800, fontFamily: "'JetBrains Mono', monospace" }}>
+                {balanceData ? `${parseFloat(balanceData.formatted).toFixed(6)} ${balanceData.symbol}` : "Loading…"}
+              </span>
+            </div>
+
             <div className="divider" style={{ margin: "16px 0", background: "rgba(255,255,255,0.1)" }} />
-            
-            {/* Disconnect */}
+
             <button
               id="disconnect-btn"
               onClick={() => { disconnect(); setShowMenu(false); }}
@@ -167,31 +179,16 @@ export default function WalletConnect() {
                 borderRadius: "8px",
                 transition: "all 0.2s",
               }}
-              onMouseOver={(e) => { 
-                e.currentTarget.style.background = "rgba(239, 68, 68, 0.2)"; 
-                e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.4)";
-              }}
-              onMouseOut={(e) => { 
-                e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)"; 
-                e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.2)";
-              }}
+              onMouseOver={(e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.2)"; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)"; }}
             >
               Disconnect Wallet
             </button>
           </div>
         )}
       </div>
-  // Securely find the best connector (MetaMask or standard Injected)
-  const handleConnect = () => {
-    const connector = 
-      connectors.find((c) => c.id === "metaMask") || 
-      connectors.find((c) => c.id === "injected") || 
-      connectors[0];
-      
-    if (connector) {
-      connect({ connector });
-    }
-  };
+    );
+  }
 
   const hasConnectors = connectors.length > 0;
 
@@ -202,8 +199,8 @@ export default function WalletConnect() {
           id="connect-wallet-btn"
           onClick={handleConnect}
           disabled={isPending}
-          style={{ 
-            padding: "12px 32px", 
+          style={{
+            padding: "12px 32px",
             fontSize: "0.95rem",
             background: "linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%)",
             color: "#0f172a",
@@ -215,21 +212,11 @@ export default function WalletConnect() {
             display: "flex",
             alignItems: "center",
             gap: "10px",
-            boxShadow: "0 4px 14px rgba(255,255,255,0.15), inset 0 1px 0 rgba(255,255,255,1)",
+            boxShadow: "0 4px 14px rgba(255,255,255,0.15)",
             transition: "transform 0.2s, box-shadow 0.2s",
           }}
-          onMouseOver={(e) => {
-            if(!isPending) {
-              e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow = "0 6px 20px rgba(255,255,255,0.2), inset 0 1px 0 rgba(255,255,255,1)";
-            }
-          }}
-          onMouseOut={(e) => {
-            if(!isPending) {
-              e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.boxShadow = "0 4px 14px rgba(255,255,255,0.15), inset 0 1px 0 rgba(255,255,255,1)";
-            }
-          }}
+          onMouseOver={(e) => { if (!isPending) { e.currentTarget.style.transform = "translateY(-2px)"; } }}
+          onMouseOut={(e) => { if (!isPending) { e.currentTarget.style.transform = "translateY(0)"; } }}
         >
           {isPending && <span className="spinner" style={{ width: 18, height: 18, borderColor: "rgba(0,0,0,0.2)", borderTopColor: "#000" }} />}
           {isPending ? "Connecting…" : "Connect Wallet"}
@@ -237,9 +224,9 @@ export default function WalletConnect() {
       ) : (
         <button
           disabled
-          style={{ 
-            padding: "12px 28px", 
-            fontSize: "0.95rem", 
+          style={{
+            padding: "12px 28px",
+            fontSize: "0.95rem",
             opacity: 0.5,
             background: "rgba(255,255,255,0.1)",
             border: "1px solid rgba(255,255,255,0.2)",
