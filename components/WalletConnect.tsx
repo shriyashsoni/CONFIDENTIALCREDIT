@@ -1,5 +1,6 @@
 "use client";
 
+// WalletConnect integration with wagmi
 import { useAccount, useConnect, useDisconnect, useSwitchChain, useBalance } from "wagmi";
 import { arbitrumSepolia } from "wagmi/chains";
 import { useState } from "react";
@@ -181,6 +182,9 @@ export default function WalletConnect() {
           </div>
         )}
       </div>
+    );
+  }
+
   // Securely find the best connector (MetaMask or standard Injected)
   const handleConnect = () => {
     const connector = 
