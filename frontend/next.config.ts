@@ -2,7 +2,16 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Use webpack instead of turbopack for build (avoids cofhejs/ethers compat issues)
-  turbopack: {},
+  webpack: (config) => {
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+    };
+    config.experiments = { ...config.experiments, asyncWebAssembly: true };
+    return config;
+  },
 
   // Ensure environment variables are available at build time
   env: {
