@@ -41,6 +41,14 @@ export default function BorrowVault() {
     query: { enabled: !!address },
   });
 
+  // Read REAL Vault Liquidity
+  const { data: vaultLiquidityData, refetch: refetchVaultLiquidity } = useReadContract({
+    address: CONTRACTS.usdc,
+    abi: USDC_ABI,
+    functionName: "balanceOf",
+    args: [CONTRACTS.vault],
+  });
+
   const { isLoading: txLoading } = useWaitForTransactionReceipt({ hash: txHash });
 
   const activeLoan = loanData
@@ -65,6 +73,7 @@ export default function BorrowVault() {
         abi: VAULT_ABI,
         functionName: "borrow",
         args: [amountParsed],
+        gas: BigInt(5_000_000), // Hardcoded gas override for FHE ops (RPC underestimate fix)
       });
       setTxHash(hash);
       setStep("done");
@@ -96,6 +105,7 @@ export default function BorrowVault() {
           abi: USDC_ABI,
           functionName: "approve",
           args: [CONTRACTS.vault, total],
+          gas: BigInt(1_000_000), // Override standard estimate
         });
         setTxHash(approveTx);
         await refetchAllowance();
@@ -107,6 +117,7 @@ export default function BorrowVault() {
         address: CONTRACTS.vault,
         abi: VAULT_ABI,
         functionName: "repay",
+        gas: BigInt(2_000_000),
       });
       setTxHash(hash);
       setStep("done");
@@ -136,10 +147,10 @@ export default function BorrowVault() {
         display: "grid",
         gridTemplateColumns: "repeat(3, 1fr)",
         gap: "12px",
-        marginBottom: "24px",
+        marginBottom: "12px",
       }}>
         {[
-          { label: "Vault Liquidity", value: "50,000", unit: "mUSDC", color: "#ffffff" },
+          { label: "Vault Liquidity", value: vaultLiquidityData !== undefined ? parseFloat(formatUnits(vaultLiquidityData as bigint, 6)).toLocaleString() : "Loading...", unit: "mUSDC", color: vaultLiquidityData === BigInt(0) ? "#ef4444" : "#ffffff" },
           { label: "Max Loan (T3)",   value: "2,000",  unit: "mUSDC", color: "#aaaaaa" },
           { label: "Interest Rate",   value: "5%",     unit: "flat",  color: "#cccccc" },
         ].map((s) => (
@@ -191,6 +202,12 @@ export default function BorrowVault() {
         ))}
       </div>
 
+      {vaultLiquidityData === BigInt(0) && (
+        <div className="alert alert-error" style={{ marginBottom: "20px" }}>
+          ⚠ The lending vault currently has 0 liquidity. Please contact the protocol owner to fund the vault.
+        </div>
+      )}
+
       {/* Borrow form — only shown if no active loan */}
       {!activeLoan?.active ? (
         <>
@@ -209,8 +226,32 @@ export default function BorrowVault() {
               max="2000"
               disabled={isLoading}
             />
-            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: 5 }}>
+            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: 5, marginBottom: 12 }}>
               No collateral required — eligibility determined by your FHE credit score
+            </div>
+
+            {/* Quick Amount Buttons */}
+            <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+              {[500, 1000, 2000].map((amt) => (
+                <button
+                  key={amt}
+                  type="button"
+                  onClick={() => { setBorrowAmount(amt.toString()); setStep("idle"); }}
+                  style={{
+                    flex: 1,
+                    padding: "6px",
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: "6px",
+                    color: "#fff",
+                    fontSize: "0.8rem",
+                    cursor: "pointer",
+                    fontFamily: "'JetBrains Mono', monospace"
+                  }}
+                >
+                  ${amt} Max
+                </button>
+              ))}
             </div>
           </div>
 

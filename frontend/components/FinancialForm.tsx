@@ -55,6 +55,7 @@ export default function FinancialForm({ onScoreSubmitted }: Props) {
         abi: CREDIT_ABI,
         functionName: "submitFinancialData",
         args: [encrypted.encBalance, encrypted.encIncome],
+        gas: BigInt(8_000_000), // Massive explicit limit to satisfy Fhenix CoFHE block boundaries
       });
 
       setStatus("done");
