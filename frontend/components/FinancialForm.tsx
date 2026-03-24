@@ -31,7 +31,7 @@ export default function FinancialForm({ onScoreSubmitted }: Props) {
       const balanceBig = BigInt(Math.round(parseFloat(balance)));
       const incomeBig  = BigInt(Math.round(parseFloat(income)));
 
-      if (balanceBig <= 0n || incomeBig <= 0n) {
+      if (balanceBig <= BigInt(0) || incomeBig <= BigInt(0)) {
         throw new Error("Values must be positive integers");
       }
 

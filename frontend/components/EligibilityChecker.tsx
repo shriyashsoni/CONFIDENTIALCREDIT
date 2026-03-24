@@ -7,9 +7,9 @@ import { CONTRACTS, CREDIT_ABI, VAULT_ABI, LOAN_TIERS } from "@/lib/contracts";
 
 // Tier to min score mapping (mirrors contract constants)
 const TIER_SCORES: Record<number, bigint> = {
-  1: 3_000_000n,
-  2: 6_000_000n,
-  3: 9_000_000n,
+  1: BigInt(3000000),
+  2: BigInt(6000000),
+  3: BigInt(9000000),
 };
 
 export default function EligibilityChecker() {
@@ -185,7 +185,7 @@ export default function EligibilityChecker() {
                   <div>
                     <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Due Date</div>
                     <div style={{ fontWeight: 700, fontSize: "0.85rem" }}>
-                      {activeLoan.dueDate > 0n
+                      {activeLoan.dueDate > BigInt(0)
                         ? new Date(Number(activeLoan.dueDate) * 1000).toLocaleDateString()
                         : "—"}
                     </div>

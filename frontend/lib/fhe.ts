@@ -7,7 +7,8 @@
  *
  * cofhejs API (v0.3.x):
  *   import { cofhejs, FheTypes } from "cofhejs/web"
- *   cofhejs.encrypt(value, FheTypes.Uint64, securityZone?)
+ *   cofhejs.initialize(params)
+ *   cofhejs.encrypt(items, contractAddress, signerAddress)
  */
 
 import { BrowserProvider } from "ethers";
@@ -40,22 +41,22 @@ export async function encryptFinancialData(
     const signerAddress = await signer.getAddress();
 
     // Initialize cofhejs with the current provider
-    await cofhejs.init({
+    await (cofhejs as any).initialize({
       provider: provider as any,
       signer: signer as any,
     });
 
     // Encrypt both values as Uint64
-    const encBalance = await cofhejs.encrypt(
+    const encBalance = await (cofhejs as any).encrypt(
       [{ value: balance, type: FheTypes.Uint64 }],
-      contractAddress,
-      signerAddress,
+      contractAddress as any,
+      signerAddress as any,
     );
 
-    const encIncome = await cofhejs.encrypt(
+    const encIncome = await (cofhejs as any).encrypt(
       [{ value: income, type: FheTypes.Uint64 }],
-      contractAddress,
-      signerAddress,
+      contractAddress as any,
+      signerAddress as any,
     );
 
     // Extract the first item from the encrypted results
@@ -89,14 +90,14 @@ export async function generatePermitKey(
     const { cofhejs } = await import("cofhejs/web");
     const signer = await provider.getSigner();
 
-    await cofhejs.init({ provider: provider as any, signer: signer as any });
+    await (cofhejs as any).initialize({ provider: provider as any, signer: signer as any });
 
-    const permit = await cofhejs.createPermit({
-      contractAddress,
+    const permit = await (cofhejs as any).createPermit({
       signer: signer as any,
     });
 
-    return (permit?.publicKey ?? permit) as `0x${string}`;
+    const result = permit?.data ?? permit;
+    return (result?.publicKey ?? result) as `0x${string}`;
   } catch {
     // Fallback: random key for demo mode
     return `0x${Array.from({ length: 64 }, () =>
@@ -116,8 +117,8 @@ export async function unsealValue(
   try {
     const { cofhejs } = await import("cofhejs/web");
     const signer = await provider.getSigner();
-    await cofhejs.init({ provider: provider as any, signer: signer as any });
-    const value = await cofhejs.unseal(contractAddress, sealedData, signer as any);
+    await (cofhejs as any).initialize({ provider: provider as any, signer: signer as any });
+    const value = await (cofhejs as any).unseal(contractAddress, BigInt(sealedData), signer as any);
     return BigInt(value as any);
   } catch {
     return 0n;

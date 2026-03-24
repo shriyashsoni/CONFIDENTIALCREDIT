@@ -89,7 +89,7 @@ export default function BorrowVault() {
 
     try {
       // Step 1: Approve USDC spending if needed
-      if ((usdcAllowance as bigint ?? 0n) < total) {
+      if ((usdcAllowance as bigint ?? BigInt(0)) < total) {
         setStep("approving");
         const approveTx = await writeContractAsync({
           address: CONTRACTS.usdc,
@@ -279,7 +279,7 @@ export default function BorrowVault() {
           <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginBottom: 16, borderLeft: "2px solid #555", paddingLeft: "12px", fontFamily: "'JetBrains Mono', monospace" }}>
             ⚠ Failure to repay by{" "}
             <strong style={{ color: "#ffffff" }}>
-              {activeLoan.dueDate > 0n
+              {activeLoan.dueDate > BigInt(0)
                 ? new Date(Number(activeLoan.dueDate) * 1000).toLocaleDateString()
                 : "30 days from loan date"}
             </strong>{" "}

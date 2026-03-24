@@ -3,6 +3,7 @@
 import { useAccount, useConnect, useDisconnect, useSwitchChain, useBalance } from "wagmi";
 import { arbitrumSepolia } from "wagmi/chains";
 import { useState } from "react";
+import { formatUnits } from "viem";
 
 export default function WalletConnect() {
   const { address, isConnected, chain } = useAccount();
@@ -93,7 +94,7 @@ export default function WalletConnect() {
                 Balance
               </span>
               <span style={{ color: "#fff", fontWeight: 700, lineHeight: 1, fontSize: "0.85rem" }}>
-                {balanceData ? `${parseFloat(balanceData.formatted).toFixed(4)} ${balanceData.symbol}` : "— ETH"}
+                {balanceData ? `${parseFloat(formatUnits(balanceData.value, balanceData.decimals)).toFixed(4)} ${balanceData.symbol}` : "— ETH"}
               </span>
             </div>
 
@@ -156,7 +157,7 @@ export default function WalletConnect() {
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "16px", background: "rgba(255,255,255,0.03)", padding: "12px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.05)" }}>
               <span style={{ fontSize: "0.8rem", color: "var(--text-secondary)", fontWeight: 700 }}>Balance</span>
               <span style={{ fontSize: "0.9rem", color: "#fff", fontWeight: 800, fontFamily: "'JetBrains Mono', monospace" }}>
-                {balanceData ? `${parseFloat(balanceData.formatted).toFixed(6)} ${balanceData.symbol}` : "Loading…"}
+                {balanceData ? `${parseFloat(formatUnits(balanceData.value, balanceData.decimals)).toFixed(6)} ${balanceData.symbol}` : "Loading…"}
               </span>
             </div>
 
