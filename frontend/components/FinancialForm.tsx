@@ -13,10 +13,11 @@ interface Props {
 export default function FinancialForm({ onScoreSubmitted }: Props) {
   const { address, isConnected, connector } = useAccount();
   const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient();
 
   const [balance, setBalance] = useState("");
   const [income,  setIncome]  = useState("");
-  const [status,  setStatus]  = useState<"idle" | "encrypting" | "submitting" | "done" | "error">("idle");
+  const [status,  setStatus]  = useState<"idle" | "encrypting" | "submitting" | "confirming" | "done" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,7 +36,6 @@ export default function FinancialForm({ onScoreSubmitted }: Props) {
         throw new Error("Values must be positive integers");
       }
 
-      // Get the ACTUAL active provider from wagmi connector (handles WalletConnect etc, not just window.ethereum)
       const rawProvider = await connector.getProvider();
       if (!rawProvider) throw new Error("No wallet provider found. Please reconnect your wallet.");
       const ethersProvider = new BrowserProvider(rawProvider as any);
@@ -47,19 +47,27 @@ export default function FinancialForm({ onScoreSubmitted }: Props) {
         incomeBig
       );
 
-      // Step 2: Submit ciphertext to chain
+      // Step 2: Submit ciphertext to chain via wallet popup
       setStatus("submitting");
 
-      await writeContractAsync({
+      const hash = await writeContractAsync({
         address: CONTRACTS.credit,
         abi: CREDIT_ABI,
         functionName: "submitFinancialData",
         args: [encrypted.encBalance, encrypted.encIncome],
         gas: BigInt(8_000_000), // Massive explicit limit to satisfy Fhenix CoFHE block boundaries
       });
+      
+      setStatus("confirming");
+
+      // Wait for it to map on-chain!
+      if (publicClient) {
+        await publicClient.waitForTransactionReceipt({ hash });
+      }
 
       setStatus("done");
       onScoreSubmitted();
+
     } catch (err: any) {
       console.error("Submission error:", err);
       setStatus("error");
@@ -164,7 +172,13 @@ export default function FinancialForm({ onScoreSubmitted }: Props) {
         {status === "submitting" && (
           <div className="alert alert-info" style={{ marginBottom: 16 }}>
             <span className="spinner" />
-            <span>Submitting encrypted ciphertext to the Fhenix coprocessor…</span>
+            <span>Approve the transaction in your Wallet popup…</span>
+          </div>
+        )}
+        {status === "confirming" && (
+          <div className="alert alert-info" style={{ marginBottom: 16 }}>
+            <span className="spinner" />
+            <span>Transaction submitted! Waiting for the Arbitrum Sepolia network to successfully mine your FHE computations. This may take a few moments.</span>
           </div>
         )}
         {status === "done" && (
@@ -189,11 +203,12 @@ export default function FinancialForm({ onScoreSubmitted }: Props) {
           type="submit"
           className="btn-primary"
           style={{ width: "100%" }}
-          disabled={isLoading || !isConnected || status === "done"}
+          disabled={status === "encrypting" || status === "submitting" || status === "confirming" || !isConnected || status === "done"}
         >
-          {isLoading && <span className="spinner" />}
+          {(status === "encrypting" || status === "submitting" || status === "confirming") && <span className="spinner" />}
           {status === "encrypting" ? "Encrypting…"
-            : status === "submitting" ? "Confirming Tx…"
+            : status === "submitting" ? "Awaiting Wallet Signature…"
+            : status === "confirming" ? "Mining On-Chain…"
             : status === "done" ? "✓ Score Submitted"
             : "🔐 Encrypt & Submit"}
         </button>

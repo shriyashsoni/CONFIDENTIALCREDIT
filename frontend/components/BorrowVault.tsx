@@ -1,17 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useState, useEffect } from "react";
+import { useAccount, useReadContract, useWriteContract, usePublicClient } from "wagmi";
 import { parseUnits, formatUnits } from "viem";
 import { CONTRACTS, VAULT_ABI, USDC_ABI, LOAN_TIERS } from "@/lib/contracts";
 
 export default function BorrowVault() {
   const { address, isConnected } = useAccount();
   const { writeContractAsync } = useWriteContract();
+  const publicClient = usePublicClient();
 
   const [borrowAmount, setBorrowAmount] = useState("");
   const [step, setStep] = useState<"idle" | "approving" | "borrowing" | "repaying" | "done" | "error">("idle");
-  const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
   const [errorMsg, setErrorMsg] = useState("");
 
   // Read loan details
@@ -49,8 +49,6 @@ export default function BorrowVault() {
     args: [CONTRACTS.vault],
   });
 
-  const { isLoading: txLoading } = useWaitForTransactionReceipt({ hash: txHash });
-
   const activeLoan = loanData
     ? {
         principal: (loanData as any)[0] as bigint,
@@ -75,8 +73,13 @@ export default function BorrowVault() {
         args: [amountParsed],
         gas: BigInt(5_000_000), // Hardcoded gas override for FHE ops (RPC underestimate fix)
       });
-      setTxHash(hash);
-      setStep("done");
+      
+      // Wait for it to be statically mined!
+      if (publicClient) {
+        await publicClient.waitForTransactionReceipt({ hash });
+      }
+
+      setStep("done"); 
       await refetchLoan();
       await refetchBalance();
     } catch (err: any) {
@@ -107,11 +110,11 @@ export default function BorrowVault() {
           args: [CONTRACTS.vault, total],
           gas: BigInt(1_000_000), // Override standard estimate
         });
-        setTxHash(approveTx);
+        if (publicClient) await publicClient.waitForTransactionReceipt({ hash: approveTx });
         await refetchAllowance();
       }
 
-      // Step 2: Repay
+      // Step 2: Repay Loan!
       setStep("repaying");
       const hash = await writeContractAsync({
         address: CONTRACTS.vault,
@@ -119,7 +122,8 @@ export default function BorrowVault() {
         functionName: "repay",
         gas: BigInt(2_000_000),
       });
-      setTxHash(hash);
+      if (publicClient) await publicClient.waitForTransactionReceipt({ hash });
+      
       setStep("done");
       await refetchLoan();
       await refetchBalance();
@@ -129,7 +133,7 @@ export default function BorrowVault() {
     }
   };
 
-  const isLoading = ["approving", "borrowing", "repaying"].includes(step) || txLoading;
+  const isLoading = ["approving", "borrowing", "repaying"].includes(step);
 
   if (!isConnected) return null;
 
