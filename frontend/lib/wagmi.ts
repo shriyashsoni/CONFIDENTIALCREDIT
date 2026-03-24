@@ -2,12 +2,11 @@
 
 import { createConfig, http } from "wagmi";
 import { arbitrumSepolia } from "wagmi/chains";
-import { injected, metaMask } from "wagmi/connectors";
+import { injected } from "wagmi/connectors";
 
 export const wagmiConfig = createConfig({
   chains: [arbitrumSepolia],
   connectors: [
-    metaMask(),
     injected(),
   ],
   transports: {
