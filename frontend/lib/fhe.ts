@@ -36,25 +36,25 @@ export async function encryptFinancialData(
   try {
     const { cofhejs, FheTypes } = await import("cofhejs/web");
 
-    const signer = await provider.getSigner();
-    const signerAddress = await signer.getAddress();
-
-    // Encrypt both values as Uint64
-    const encBalance = await cofhejs.encrypt(
-      [{ value: balance, type: FheTypes.Uint64 }],
-      contractAddress,
-      signerAddress,
+    // Encrypt both values as Uint64 (contractAddress/signerAddress no longer required in v0.3.x)
+    const encBalanceRes = await cofhejs.encrypt(
+      [{ value: balance, type: FheTypes.Uint64 }]
     );
 
-    const encIncome = await cofhejs.encrypt(
-      [{ value: income, type: FheTypes.Uint64 }],
-      contractAddress,
-      signerAddress,
+    const encIncomeRes = await cofhejs.encrypt(
+      [{ value: income, type: FheTypes.Uint64 }]
     );
 
-    // Extract the first item from the encrypted results
-    const balResult = Array.isArray(encBalance) ? encBalance[0] : encBalance;
-    const incResult = Array.isArray(encIncome) ? encIncome[0] : encIncome;
+    // cofhejs v0.3.x returns a Result object: { success, data, error }
+    if (encBalanceRes.error) throw new Error(encBalanceRes.error.message || "Balance encryption failed");
+    if (encIncomeRes.error) throw new Error(encIncomeRes.error.message || "Income encryption failed");
+
+    const encBalanceItems = encBalanceRes.data || encBalanceRes;
+    const encIncomeItems = encIncomeRes.data || encIncomeRes;
+
+    // Extract the first item from the encrypted results (cast to any to fix strict TS Result generics mapping)
+    const balResult = (Array.isArray(encBalanceItems) ? encBalanceItems[0] : encBalanceItems) as any;
+    const incResult = (Array.isArray(encIncomeItems)  ? encIncomeItems[0]  : encIncomeItems) as any;
 
     return {
       encBalance: {
@@ -82,13 +82,17 @@ export async function generatePermitKey(
   try {
     const { cofhejs } = await import("cofhejs/web");
     const signer = await provider.getSigner();
+    const signerAddress = await signer.getAddress();
 
-    const permit = await cofhejs.createPermit({
-      contractAddress,
-      signer: signer as any,
+    const permitRes = await cofhejs.createPermit({
+      type: "self",
+      issuer: signerAddress,
     });
 
-    return (permit?.publicKey ?? permit) as `0x${string}`;
+    if (permitRes.error) throw new Error(permitRes.error.message || "Permit creation failed");
+    const permit = permitRes.data as any;
+
+    return (permit?.sealingPair?.publicKey ?? permit?.publicKey ?? permit) as `0x${string}`;
   } catch {
     // Fallback: random key for demo mode
     return `0x${Array.from({ length: 64 }, () =>
@@ -106,10 +110,12 @@ export async function unsealValue(
   sealedData: string
 ): Promise<bigint> {
   try {
-    const { cofhejs } = await import("cofhejs/web");
+    const { cofhejs, FheTypes } = await import("cofhejs/web");
     const signer = await provider.getSigner();
-    const value = await cofhejs.unseal(contractAddress, sealedData, signer as any);
-    return BigInt(value as any);
+    
+    // Unseal returns a Result wrapper in v0.3.x
+    const res = await cofhejs.unseal(BigInt(sealedData), FheTypes.Uint64, await signer.getAddress());
+    return BigInt((res.data ?? res) as any);
   } catch {
     return 0n;
   }
