@@ -4,11 +4,6 @@
  * FHE helpers using cofhejs for client-side encryption.
  * Numbers are encrypted locally before being sent to the contract —
  * the raw balance/income values never leave the user's browser.
- *
- * cofhejs API (v0.3.x):
- *   import { cofhejs, FheTypes } from "cofhejs/web"
- *   cofhejs.initialize(params)
- *   cofhejs.encrypt(items, contractAddress, signerAddress)
  */
 
 import { BrowserProvider } from "ethers";
@@ -23,9 +18,14 @@ export interface EncryptedFinancialData {
   encIncome:  EncryptedInput;
 }
 
+// Convert Uint8Array to hex string for viem compatibility
+function bufToHex(buf: Uint8Array | string): `0x${string}` {
+  if (typeof buf === "string") return (buf.startsWith("0x") ? buf : `0x${buf}`) as `0x${string}`;
+  return ("0x" + Array.from(buf).map(b => b.toString(16).padStart(2, "0")).join("")) as `0x${string}`;
+}
+
 /**
  * Encrypt balance and income values using cofhejs.
- * Falls back to mock data so the UI remains functional on unsupported networks.
  */
 export async function encryptFinancialData(
   provider: BrowserProvider,
@@ -34,29 +34,22 @@ export async function encryptFinancialData(
   income: bigint
 ): Promise<EncryptedFinancialData> {
   try {
-    // cofhejs exports from "cofhejs/web" (NOT "cofhejs/browser")
     const { cofhejs, FheTypes } = await import("cofhejs/web");
 
     const signer = await provider.getSigner();
     const signerAddress = await signer.getAddress();
 
-    // Initialize cofhejs with the current provider
-    await (cofhejs as any).initialize({
-      provider: provider as any,
-      signer: signer as any,
-    });
-
     // Encrypt both values as Uint64
-    const encBalance = await (cofhejs as any).encrypt(
+    const encBalance = await cofhejs.encrypt(
       [{ value: balance, type: FheTypes.Uint64 }],
-      contractAddress as any,
-      signerAddress as any,
+      contractAddress,
+      signerAddress,
     );
 
-    const encIncome = await (cofhejs as any).encrypt(
+    const encIncome = await cofhejs.encrypt(
       [{ value: income, type: FheTypes.Uint64 }],
-      contractAddress as any,
-      signerAddress as any,
+      contractAddress,
+      signerAddress,
     );
 
     // Extract the first item from the encrypted results
@@ -65,17 +58,17 @@ export async function encryptFinancialData(
 
     return {
       encBalance: {
-        data: (balResult?.data ?? balResult?.ctHash ?? "0x00") as `0x${string}`,
+        data: bufToHex(balResult?.data ?? balResult?.ctHash ?? new Uint8Array()),
         securityZone: balResult?.securityZone ?? 0,
       },
       encIncome: {
-        data: (incResult?.data ?? incResult?.ctHash ?? "0x00") as `0x${string}`,
+        data: bufToHex(incResult?.data ?? incResult?.ctHash ?? new Uint8Array()),
         securityZone: incResult?.securityZone ?? 0,
       },
     };
   } catch (err: any) {
     console.error("cofhejs encryption failed:", err);
-    throw new Error(`Encryption failed: ${err?.message ?? "Unknown error. Check browser console for details."}`);
+    throw new Error(`Encryption failed: ${err?.message ?? "Check browser console for details."}`);
   }
 }
 
@@ -90,14 +83,12 @@ export async function generatePermitKey(
     const { cofhejs } = await import("cofhejs/web");
     const signer = await provider.getSigner();
 
-    await (cofhejs as any).initialize({ provider: provider as any, signer: signer as any });
-
-    const permit = await (cofhejs as any).createPermit({
+    const permit = await cofhejs.createPermit({
+      contractAddress,
       signer: signer as any,
     });
 
-    const result = permit?.data ?? permit;
-    return (result?.publicKey ?? result) as `0x${string}`;
+    return (permit?.publicKey ?? permit) as `0x${string}`;
   } catch {
     // Fallback: random key for demo mode
     return `0x${Array.from({ length: 64 }, () =>
@@ -117,8 +108,7 @@ export async function unsealValue(
   try {
     const { cofhejs } = await import("cofhejs/web");
     const signer = await provider.getSigner();
-    await (cofhejs as any).initialize({ provider: provider as any, signer: signer as any });
-    const value = await (cofhejs as any).unseal(contractAddress, BigInt(sealedData), signer as any);
+    const value = await cofhejs.unseal(contractAddress, sealedData, signer as any);
     return BigInt(value as any);
   } catch {
     return 0n;
