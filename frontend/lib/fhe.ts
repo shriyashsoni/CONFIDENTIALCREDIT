@@ -36,6 +36,17 @@ export async function encryptFinancialData(
   try {
     const { cofhejs, FheTypes } = await import("cofhejs/web");
 
+    const signer = await provider.getSigner();
+
+    // Initialize cofhejs with the current provider and signer
+    const initRes = await cofhejs.initializeWithEthers({
+      ethersProvider: provider,
+      ethersSigner: signer,
+    });
+    if (initRes.error) {
+       console.error("FHE Initialization failed:", initRes.error);
+    }
+
     // Encrypt both values as Uint64 (contractAddress/signerAddress no longer required in v0.3.x)
     const encBalanceRes = await cofhejs.encrypt(
       [{ value: balance, type: FheTypes.Uint64 }]
@@ -84,6 +95,12 @@ export async function generatePermitKey(
     const signer = await provider.getSigner();
     const signerAddress = await signer.getAddress();
 
+    // Ensure initialized
+    await cofhejs.initializeWithEthers({
+      ethersProvider: provider,
+      ethersSigner: signer,
+    });
+
     const permitRes = await cofhejs.createPermit({
       type: "self",
       issuer: signerAddress,
@@ -113,6 +130,12 @@ export async function unsealValue(
     const { cofhejs, FheTypes } = await import("cofhejs/web");
     const signer = await provider.getSigner();
     
+    // Ensure initialized
+    await cofhejs.initializeWithEthers({
+      ethersProvider: provider,
+      ethersSigner: signer,
+    });
+
     // Unseal returns a Result wrapper in v0.3.x
     const res = await cofhejs.unseal(BigInt(sealedData), FheTypes.Uint64, await signer.getAddress());
     return BigInt((res.data ?? res) as any);
