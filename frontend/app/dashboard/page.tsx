@@ -1,17 +1,41 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useReadContract } from "wagmi";
 import { useRouter } from "next/navigation";
 import WalletConnect from "@/components/WalletConnect";
 import FinancialForm from "@/components/FinancialForm";
 import EligibilityChecker from "@/components/EligibilityChecker";
 import BorrowVault from "@/components/BorrowVault";
+import { CONTRACTS, CREDIT_ABI, VAULT_ABI } from "@/lib/contracts";
 
 export default function DashboardPage() {
   const { isConnected, address } = useAccount();
   const router = useRouter();
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
+  const [eligibilityChecked, setEligibilityChecked] = useState(false);
+
+  // Read on-chain states to drive the progress bar dynamically
+  const { data: hasScoreOnChain } = useReadContract({
+    address: CONTRACTS.credit,
+    abi: CREDIT_ABI,
+    functionName: "hasScore",
+    args: [address!],
+    query: { enabled: !!address },
+  });
+
+  const { data: loanData } = useReadContract({
+    address: CONTRACTS.vault,
+    abi: VAULT_ABI,
+    functionName: "getLoanDetails",
+    args: [address!],
+    query: { enabled: !!address },
+  });
+
+  const step1Done = !!hasScoreOnChain || scoreSubmitted;
+  const activeLoan = loanData ? (loanData as any)[3] as boolean : false;
+  const step3Done = activeLoan;
+  const step2Done = step3Done || eligibilityChecked; // If they borrowed, they checked.
 
   return (
     <div style={{ minHeight: "100vh", position: "relative", zIndex: 1, backgroundColor: "#02040a" }}>
@@ -112,9 +136,9 @@ export default function DashboardPage() {
               boxShadow: "0 10px 30px rgba(0,0,0,0.2)"
             }}>
               {[
-                { num: 1, label: "Encrypt & Submit", done: scoreSubmitted, icon: "🛡️" },
-                { num: 2, label: "Check Eligibility", done: false, icon: "📊" },
-                { num: 3, label: "Borrow / Repay",   done: false, icon: "🏦" },
+                { num: 1, label: "Encrypt & Submit", done: step1Done, icon: "🛡️" },
+                { num: 2, label: "Check Eligibility", done: step2Done, icon: "📊" },
+                { num: 3, label: "Borrow / Repay",   done: step3Done, icon: "🏦" },
               ].map((s, i) => (
                 <div key={s.num} style={{ display: "flex", alignItems: "center", flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
@@ -172,7 +196,7 @@ export default function DashboardPage() {
                   <FinancialForm onScoreSubmitted={() => setScoreSubmitted(true)} />
                 </div>
                 <div style={{ padding: "32px", background: "rgba(10, 15, 30, 0.4)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "20px", boxShadow: "0 20px 40px rgba(0,0,0,0.3)", backdropFilter: "blur(12px)" }}>
-                  <EligibilityChecker />
+                  <EligibilityChecker onChecked={() => setEligibilityChecked(true)} />
                 </div>
               </div>
 

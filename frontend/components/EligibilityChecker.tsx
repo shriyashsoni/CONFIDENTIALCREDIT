@@ -11,8 +11,11 @@ const TIER_SCORES: Record<number, bigint> = {
   2: BigInt(6000000),
   3: BigInt(9000000),
 };
+interface Props {
+  onChecked?: () => void;
+}
 
-export default function EligibilityChecker() {
+export default function EligibilityChecker({ onChecked }: Props = {}) {
   const { address, isConnected } = useAccount();
   const publicClient = usePublicClient();
 
@@ -56,6 +59,7 @@ export default function EligibilityChecker() {
         account: address,
       });
       setEligibilityResult(eligible as boolean);
+      if (eligible && onChecked) onChecked();
     } catch (err: any) {
       // Extract revert reason if available
       const msg = err?.shortMessage || err?.message || "";
